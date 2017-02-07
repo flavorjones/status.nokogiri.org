@@ -79,10 +79,10 @@ get "/group/:key" do |env|
 end
 
 get "/" do |env|
-  hosts = (ENV["HOSTS"]? || "").split(/\s+/)
-  groups = GROUPS.keys
-
-  json_or_html(hosts, "index")
+  # hosts = (ENV["HOSTS"]? || "").split(/\s+/)
+  # groups = GROUPS.keys
+  # json_or_html(hosts, "index")
+  env.redirect "/host/ci.nokogiri.org"
 end
 
 Kemal.config.add_handler ExposeUnauthorizedHandler.new
