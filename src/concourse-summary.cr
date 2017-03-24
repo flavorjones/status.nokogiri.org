@@ -13,8 +13,13 @@ def setup(env)
   refresh_interval = REFRESH_INTERVAL
   username = env.store["credentials_username"]?
   password = env.store["credentials_password"]?
+  team_name = "main"
 
   login_form = env.params.query.has_key?("login_form")
+  if env.params.query.has_key?("login_team")
+    team_name = env.params.query["login_team"]
+    login_form = true
+  end
   if login_form && (username.to_s.size == 0 || password.to_s.size == 0)
     raise Unauthorized.new
   end
@@ -27,7 +32,7 @@ def setup(env)
     collapso_toggle = collapso_toggle + ["ignore_groups"]
   end
 
-  {refresh_interval,username,password,ignore_groups,collapso_toggle,login_form}
+  {refresh_interval,username,password,ignore_groups,collapso_toggle,login_form,team_name}
 end
 
 def process(data, ignore_groups)
@@ -38,34 +43,46 @@ def process(data, ignore_groups)
 end
 
 get "/host/jobs/:host/**" do |env|
-  refresh_interval,username,password,ignore_groups,collapso_toggle,login_form = setup(env)
+  refresh_interval,username,password,ignore_groups,collapso_toggle,login_form,team_name = setup(env)
   host = env.params.url["host"]
 
   data = MyData.get_data(host, username, password, nil, login_form)
   jobs = data.map do |pipeline,job|
     JobInfo.new(pipeline, job)
   end.select do |info|
-    info.running || (!(info.status == "succeeded" || info.status.nil?) && !info.paused)
-  end.reject do |info|
-    start_time_days = info.start_time_ago_days || 0
-    start_time_days > 7 || (info.name.match(/specs-(edge|lts)-(aws|gcp)-develop/) && start_time_days > 1)
+    info.running || (!info.status.nil? && info.status != "succeeded" && !info.paused)
+  end.sort_by{|a| a.start_time || 0 }
+
+  json_or_html(jobs, "jobs")
+end
+
+get "/jobs/match/:keyword/:host/**" do |env|
+  refresh_interval,username,password,ignore_groups,collapso_toggle,login_form,team_name = setup(env)
+  keyword = env.params.url["keyword"]
+  host = env.params.url["host"]
+
+  data = MyData.get_data(host, username, password, nil, login_form, team_name)
+  jobs = data.map do |pipeline,job|
+    JobInfo.new(pipeline, job)
+  end.select do |info|
+    info.name.includes? keyword
   end.sort_by{|a| a.start_time || 0 }
 
   json_or_html(jobs, "jobs")
 end
 
 get "/host/:host/**" do |env|
-  refresh_interval,username,password,ignore_groups,collapso_toggle,login_form = setup(env)
+  refresh_interval,username,password,ignore_groups,collapso_toggle,login_form,team_name = setup(env)
   host = env.params.url["host"]
 
-  data = MyData.get_data(host, username, password, nil, login_form)
+  data = MyData.get_data(host, username, password, nil, login_form, team_name)
   statuses = process(data, ignore_groups)
 
   json_or_html(statuses, "host")
 end
 
 get "/group/:key" do |env|
-  refresh_interval,username,password,ignore_groups,collapso_toggle,login_form = setup(env)
+  refresh_interval,username,password,ignore_groups,collapso_toggle,login_form,team_name = setup(env)
 
   hosts = GROUPS[env.params.url["key"]]
   hosts = hosts.map do |host, pipelines|
@@ -79,8 +96,10 @@ get "/group/:key" do |env|
 end
 
 get "/" do |env|
+  # refresh_interval = REFRESH_INTERVAL
   # hosts = (ENV["HOSTS"]? || "").split(/\s+/)
   # groups = GROUPS.keys
+
   # json_or_html(hosts, "index")
   env.redirect "/host/ci.nokogiri.org"
 end

@@ -1,43 +1,70 @@
 window.refresh_interval = window.refresh_interval || 30;
+
+var styles = document.createElement("style");
+document.head.appendChild(styles);
+
 var scaleboxes = function() {
-  var mult = window.innerHeight / document.body.clientHeight;
-  if (mult >= 1) return;
-  mult = mult + ((1 - mult) / 4);
-  var x = document.querySelectorAll('div.scalable a.outer');
-  for (var i = 0; i < x.length; i++) {
-    var y = x[i];
-    y.style.width = Math.floor(200 * mult) + "px";
-    y.style.height = Math.floor(120 * mult) + "px";
+  var x = document.querySelectorAll('a.outer');
+  var notboxes = 32 + (32 * document.querySelectorAll('.group').length);
+  var y = ((window.innerHeight - notboxes) * window.innerWidth) / x.length;
+  var w = Math.floor(Math.sqrt(y)) - 4;
+  var h = w * 2 / 3;
+  var h = Math.floor(w * 2 / 3);
+
+  // Correct if too long
+  var perColumn = Math.floor(window.innerWidth / (w + 4));
+  var numRows = Math.ceil(x.length / perColumn)
+  var heightRequired = numRows * (h + 4) + notboxes;
+  if (heightRequired > window.innerHeight) {
+    numRows -= 1;
+    perColumn = Math.ceil(x.length / numRows);
+    w = Math.floor(window.innerWidth / perColumn) - 8;
+    h = Math.floor(w * 2 / 3);
   }
-  x = document.querySelectorAll('div.scalable a.outer div.inner');
-  for (var i = 0; i < x.length; i++) {
-    var y = x[i];
-    y.style.height = Math.floor(120 * mult) + "px";
-    y.style.lineHeight = Math.floor(120 * mult / 4) + "px";
-    y.style.fontSize = Math.floor(120 * mult / 6) + "px";
-  }
-};
-var scaletext = function() {
-  var x = document.querySelectorAll('div.scalable .inner > span > span')
-  for (var i = 0; i < x.length; i++) {
-    var y = x[i];
-    var z = y.parentNode
-    var multi = (z.offsetWidth * 0.8) / y.offsetWidth
-    if (multi < 1) {
-      y.style.fontSize = (multi * 100) + '%'
+
+ // Set styles
+  boxStyle = "body{overflow:hidden}";
+  boxStyle += "a.outer {";
+  boxStyle += "width:"+w+"px;";
+  boxStyle += "height: "+h+"px;";
+  boxStyle += "}";
+  boxStyle += "a.outer div.inner {";
+  boxStyle += "height: " + h + "px;";
+  boxStyle += "line-height: " + Math.floor(h / 4) + "px;";
+  boxStyle += "font-size: " + Math.floor(h / 6) + "px;";
+  boxStyle += "}";
+  styles.innerHTML = boxStyle;
+
+  var numRunning = document.querySelectorAll('a.outer.running').length;
+  var favicon = new Favico({ animation:'none' });
+  favicon.badge(numRunning);
+
+  setTimeout(function(){
+    var x = document.querySelectorAll('a.outer .inner > span > span')
+    for (var i = 0; i < x.length; i++) {
+      var y = x[i];
+      var z = y.parentNode
+      var multi = (z.offsetWidth * 0.8) / y.offsetWidth
+      if (multi < 1) {
+        y.style.fontSize = (multi * 100) + '%'
+      }
     }
-  }
+  }, 10);
 };
+
 var onerror = function() {
   document.body.innerHTML = '<div class="time">' + Date() + ' (<span id="countdown">' + refresh_interval + '</span>)</div><h1>ERROR</h1>';
+  document.head.setAttribute("rel", "error");
 };
 var onsuccess = function(request) {
   var doc = document.implementation.createHTMLDocument("example");
   doc.documentElement.innerHTML = request.response;
-  document.head.innerHTML=doc.head.innerHTML;
+  if (document.head.getAttribute("rel") != doc.head.getAttribute("rel")) {
+    window.location.reload();
+  }
   document.body.innerHTML=doc.body.innerHTML;
+
   scaleboxes()
-  scaletext();
 };
 setInterval(function() {
   var request = new XMLHttpRequest();
@@ -59,5 +86,6 @@ setInterval(function() {
     el.innerText = counter - 1;
   }
 }, 1000);
-scaleboxes()
-scaletext();
+
+window.addEventListener("load", function() { scaleboxes() });
+window.addEventListener("resize", function() { scaleboxes() });

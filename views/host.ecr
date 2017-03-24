@@ -1,5 +1,5 @@
-<div class="time"><%= Time.now %> (<span id="countdown"><%= refresh_interval %></span>)<a href="https://github.com/dgodd/concourse-summary" target="_blank" style="position:absolute;right:0;top:0;"><img src="/github.png" width="32" height="32"></a></div>
+<% Kilt.embed "views/header.ecr" %>
 
+<div class="scalable">
 <% Kilt.embed "views/single_host.ecr" %>
-
-<% Kilt.embed "views/bottom.ecr" %>
+</div>
