@@ -14,13 +14,15 @@ a {color:#E6E7E8;}
 .group > div {display:flex;flex-flow:row wrap;justify-content:space-around;}
 .outer {display:block;width:300px;height:200px;color:white;background:#5C6C7D;position:relative;margin:4px;}
 .status {position:absolute;top:0;bottom:0;left:0;right:0;white-space:nowrap;overflow:hidden;text-align:left;}
-.paused_job, .aborted, .errored, .failed, .succeeded {display:inline-block;height:100%;margin:0;padding:0;float:left;}
+.paused_job, .aborted, .errored, .failed, .succeeded {position:absolute;top:0;height:100%;margin:0;padding:0;}
 .paused_job {background:#3498DB;}
 .aborted {background:#8F4B2D;}
 .errored {background:#E67E21;}
 .failed {background:#E74C3C;}
 .succeeded {background:#2ECC71;}
-.paused {position:absolute;top:0;bottom:0;left:0;right:0;box-sizing:border-box;border:14px solid #2682D5;}
+.broken, .paused {position:absolute;top:0;bottom:0;left:0;right:0;box-sizing:border-box;}
+.broken {border:14px solid #E67E21;}
+.paused {border:14px solid #2682D5;}
 .inner {position:absolute;top:0;bottom:0;left:0;right:0;text-align:center;text-decoration:none;white-space:nowrap;overflow:hidden;display:flex;justify-content:center;flex-direction:column;}
 .running .inner {height:100%;}
  @-webkit-keyframes pulseBorder {
